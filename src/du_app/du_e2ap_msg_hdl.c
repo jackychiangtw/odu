@@ -15,6 +15,8 @@
 #   limitations under the License.                                             #
 ################################################################################
 *******************************************************************************/
+#include "kpm.h"
+#include "run_report_loop.h"
 #include "common_def.h"
 #include "lrg.h"
 #include "lkw.x"
@@ -428,6 +430,7 @@ uint8_t BuildAndSendE2SetupReq()
 {
    uint8_t idx = 0;
    uint8_t ret = ROK;
+   uint8_t ret_kpm = 0;
    E2AP_PDU_t        *e2apMsg = NULLP;
    E2setupRequest_t  *e2SetupReq = NULLP;
    asn_enc_rval_t     encRetVal;       /* Encoder return value */
@@ -460,6 +463,10 @@ uint8_t BuildAndSendE2SetupReq()
          DU_LOG("\nERROR  -->  E2AP : fillE2SetupReq() failed");
          break;
       }
+
+      ret_kpm = kpm(&e2SetupReq);
+      DU_LOG("\nDEBUG   -->  E2AP : Print out E2AP_PDU of E2SetupRequest\n");
+
       /* Prints the Msg formed */
       xer_fprint(stdout, &asn_DEF_E2AP_PDU, e2apMsg);
 
@@ -516,8 +523,8 @@ uint8_t BuildRicRequestId(RICrequestID_t *ricReqId)
       return RFAILED;
    }
 
-   ricReqId->ricRequestorID = 1;
-   ricReqId->ricInstanceID  = 1;
+   ricReqId->ricRequestorID = e2apMsgDb.ricReqId;
+   ricReqId->ricInstanceID  = e2apMsgDb.ricInstanceId;
    return ROK;
 }
 
@@ -984,6 +991,12 @@ uint8_t procE2SetupRsp(E2AP_PDU_t *e2apMsg)
          case ProtocolIE_IDE2_id_E2nodeComponentConfigAdditionAck:
             break;
 
+         case ProtocolIE_IDE2_id_RANfunctionsAccepted:
+             {
+              DU_LOG("\nINFO   -->  E2AP : RAN Functions Accepted!");
+              break;
+             }
+
          default:
             DU_LOG("\nERROR  -->  E2AP : Invalid IE received in E2SetupRsp:%ld",
                   e2SetRspMsg->protocolIEs.list.array[arrIdx]->id);
@@ -1194,7 +1207,7 @@ uint8_t FillRicIndication(RICindication_t *ricIndicationMsg)
    uint8_t elementCnt=0;
    uint8_t idx=0;
    uint8_t ret = ROK;
-   elementCnt = 6;
+   elementCnt = 7;
 
    ricIndicationMsg->protocolIEs.list.count = elementCnt;
    ricIndicationMsg->protocolIEs.list.size  = elementCnt * sizeof(RICindication_t);
@@ -1247,6 +1260,15 @@ uint8_t FillRicIndication(RICindication_t *ricIndicationMsg)
 	 ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICactionID =
 	    e2apMsgDb.ricActionId;
 
+   /* KPM part */
+    idx++;
+    ricIndicationMsg->protocolIEs.list.array[idx]->id = ProtocolIE_IDE2_id_RICindicationSN;
+    ricIndicationMsg->protocolIEs.list.array[idx]->criticality = CriticalityE2_reject;
+    ricIndicationMsg->protocolIEs.list.array[idx]->value.present = \
+                           RICindication_IEs__value_PR_RICindicationSN;
+    ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationSN = 1;
+    /* KPM part */
+
 	 idx++;
 	 ricIndicationMsg->protocolIEs.list.array[idx]->id = ProtocolIE_IDE2_id_RICindicationType;
 	 ricIndicationMsg->protocolIEs.list.array[idx]->criticality = CriticalityE2_reject;
@@ -1256,14 +1278,30 @@ uint8_t FillRicIndication(RICindication_t *ricIndicationMsg)
 	    e2apMsgDb.ricActionType;
 
 	 idx++;
+
+    /* KPM part */
+    int header_length = 15;
+    int message_length = 70;
+    uint8_t indication_header_ret = ROK;
+    uint8_t indication_message_ret = ROK;
+         PLMN_IdentityE2_t plmn_id;
+         plmn_id.size = 3 * sizeof(uint8_t);
+         plmn_id.buf = NULLP;
+         DU_ALLOC(plmn_id.buf , plmn_id.size);
+         buildPlmnId(duCfgParam.srvdCellLst[0].duCellInfo.cellInfo.nrCgi.plmn, \
+                  plmn_id.buf);
+    /* KPM part */
+
 	 ricIndicationMsg->protocolIEs.list.array[idx]->id = ProtocolIE_IDE2_id_RICindicationHeader;
 	 ricIndicationMsg->protocolIEs.list.array[idx]->criticality = CriticalityE2_reject;
 	 ricIndicationMsg->protocolIEs.list.array[idx]->value.present = \
 									RICindication_IEs__value_PR_RICindicationHeader;
-	 ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.size = 3 *
-	    sizeof(uint8_t);
-	 DU_ALLOC(ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.buf ,\
-	       ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.size);
+	 ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.size = header_length;
+    ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.buf = (uint8_t*)calloc(1,header_length);
+    //DU_ALLOC(ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.buf ,\
+          ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.size);
+    indication_header_ret = generate_Indication_header(plmn_id.buf, ricIndicationMsg, idx);
+
 	 if(ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.buf == NULLP)
 	 {
 	    DU_LOG("\nERROR  -->  E2AP : Memory allocation for RICindicationIEs failed");
@@ -1271,8 +1309,8 @@ uint8_t FillRicIndication(RICindication_t *ricIndicationMsg)
 	 }
 	 else
 	 {
-	    buildPlmnId(duCfgParam.srvdCellLst[0].duCellInfo.cellInfo.nrCgi.plmn, \
-		  ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.buf);
+	    /*buildPlmnId(duCfgParam.srvdCellLst[0].duCellInfo.cellInfo.nrCgi.plmn, \
+		  ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationHeader.buf);*/
 	    idx++;
 	    /* TO BE CHANGED: RIC INDICATION DATA */
 	    /* For now filling a dummy octect data, need to tested with PRBs*/
@@ -1280,10 +1318,10 @@ uint8_t FillRicIndication(RICindication_t *ricIndicationMsg)
 	    ricIndicationMsg->protocolIEs.list.array[idx]->criticality = CriticalityE2_reject;
 	    ricIndicationMsg->protocolIEs.list.array[idx]->value.present = \
 									   RICindication_IEs__value_PR_RICindicationMessage;
-	    ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.size = 3 *
-	       sizeof(uint8_t);
-	    DU_ALLOC(ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.buf ,\
-		  ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.size);
+	    ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.size = message_length;
+       /*DU_ALLOC(ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.buf ,\
+        ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.size);*/
+       ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.buf = (uint8_t*)calloc(1,message_length);
 	    if(ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.buf == NULLP)
 	    {
 	       DU_LOG("\nERROR  -->  E2AP : Memory allocation for RICindicationIEs failed");
@@ -1291,8 +1329,9 @@ uint8_t FillRicIndication(RICindication_t *ricIndicationMsg)
 	    }
 	    else
 	    {
-	       buildPlmnId(duCfgParam.srvdCellLst[0].duCellInfo.cellInfo.nrCgi.plmn, \
+	       //buildPlmnId(duCfgParam.srvdCellLst[0].duCellInfo.cellInfo.nrCgi.plmn, \
 		     ricIndicationMsg->protocolIEs.list.array[idx]->value.choice.RICindicationMessage.buf);
+           indication_message_ret = generate_Indication_message(plmn_id.buf, ricIndicationMsg, idx);
 	    }
 	 }
       }

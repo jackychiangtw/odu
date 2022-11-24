@@ -40,6 +40,8 @@ I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/common
 I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/F1AP
 I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/RRC
 I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/E2AP
+I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/E2SM_KPM
+I_OPTS+=-I$(ROOT_DIR)/src/E2
 
 ifeq ($(O1_ENABLE),YES)
 I_OPTS+=-I$(ROOT_DIR)/src/o1

@@ -183,6 +183,13 @@ prepare_ric_dirs:
 	 $(Q)mkdir -p $(BIN_DIR)/ric_stub
 	 $(Q)echo -e "Directories are successfully prepared"
 
+prepare_e2_dirs:
+	 $(Q)echo -e "Preparing directories for build..."
+	 $(Q)mkdir -p $(BUILD_DIR)/obj/e2_stub
+	 $(Q)mkdir -p $(LIB_ROOT)/e2_stub
+	 $(Q)mkdir -p $(BIN_DIR)/e2_stub
+	 $(Q)echo -e "Directories are successfully prepared"
+
 du:
 		$(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_common.mak OBJ_DIR=$(OBJ_ROOT)/odu LIB_DIR=$(LIB_ROOT)/odu LOG_DIR=$(LOG_ROOT)/odu CC='$(CC1)'
 		$(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_f1ap.mak OBJ_DIR=$(OBJ_ROOT)/odu LIB_DIR=$(LIB_ROOT)/odu LOG_DIR=$(LOG_ROOT)/odu CC='$(CC1)'
@@ -285,8 +292,10 @@ link_cu:
 
 ric: 
 	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/ric_stub.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/e2.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
 	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_common.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
 	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_e2ap.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_e2kpm.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
 	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/cm.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
 	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/mt.mak OBJ_DIR=$(OBJ_ROOT)/ric_stub LIB_DIR=$(LIB_ROOT)/ric_stub LOG_DIR=$(LOG_ROOT)/ric_stub CC='$(CC1)'
 ifeq ($(O1_ENABLE),YES)
@@ -311,6 +320,30 @@ endif
 	 $(Q)rm -rf $(ROOT_DIR)/bin/ric_stub
 	 $(Q)echo -e "***** RIC STUB CLEAN COMPLETE *****"
 
+e2: 
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/e2_stub.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_common.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_e2ap.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_e2kpm.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/e2.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/cm.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/mt.mak OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+
+clean_e2:
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/e2_stub.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_common.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_e2ap.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/asn_e2kpm.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/e2.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/cm.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)$(MAKE) -j -f $(COM_BUILD_DIR)/mt.mak clean OBJ_DIR=$(OBJ_ROOT)/e2_stub LIB_DIR=$(LIB_ROOT)/e2_stub LOG_DIR=$(LOG_ROOT)/e2_stub CC='$(CC1)'
+	 $(Q)rm -rf $(OBJ_ROOT)/e2_stub/*
+	 $(Q)rm -rf $(LIB_ROOT)/e2_stub/*
+	 $(Q)rm -rf $(BIN_DIR)/e2_stub/*
+	 $(Q)rm -rf $(ROOT_DIR)/bin/e2_stub
+	 $(Q)echo -e "***** E2 STUB CLEAN COMPLETE *****"
+
+
 
 link_ric: 
 		$(Q)$(CC1) -g -o $(OBJ_ROOT)/ric_stub/ric_stub -Wl,-R../lib/:. $(OBJ_ROOT)/ric_stub/*.o\
@@ -320,6 +353,13 @@ link_ric:
 		$(Q)cp -f ../scripts/start_ric_stub_logging.sh $(ROOT_DIR)/bin/ric_stub
 		$(Q)echo -e "***** RIC STUB BUILD COMPLETE *****"
 
+link_e2: 
+		$(Q)$(CC1) -g -o $(OBJ_ROOT)/e2_stub/e2_stub -Wl,-R../lib/:. $(OBJ_ROOT)/e2_stub/*.o\
+		$(L_OPTS) -L$(LIB_ROOT)/e2_stub -L$(ROOT_DIR)/libs/e2_stub
+		$(Q)cp -f ./obj/e2_stub/e2_stub ./bin/e2_stub
+		$(Q)cp -rf ./bin/e2_stub $(ROOT_DIR)/bin/
+		$(Q)cp -f ../scripts/start_e2_stub_logging.sh $(ROOT_DIR)/bin/e2_stub
+		$(Q)echo -e "***** E2 STUB BUILD COMPLETE *****"
 
 copy_build: link_du
 			$(Q)cp -f ./obj/odu/odu ./bin/odu
@@ -332,6 +372,7 @@ copy_build: link_du
 odu: prepare_dirs copy_build
 cu_stub: prepare_cu_dirs cu link_cu
 ric_stub: prepare_ric_dirs ric link_ric
+e2_stub: prepare_e2_dirs e2 link_e2
 
 #**********************************************************************
 #         End of file

@@ -14,13 +14,13 @@
 #   limitations under the License.                                             #
 ################################################################################
 
-# This is makefile for RIC STUB
+# This is makefile for E2 module
 
 include ../common/rsys_fancy.mak
 include ../common/env.mak
 COLOR=$(COLOR_RED)
 
-SRC_DIR=$(ROOT_DIR)/src/ric_stub/
+SRC_DIR=$(ROOT_DIR)/src/E2_stub/
 C_SRCS=$(wildcard $(SRC_DIR)/*.c)
 C_OBJS=$(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(C_SRCS))
 
@@ -29,36 +29,41 @@ HDR_FILES+=$(wildcard $(CM_DIR)/env*.[hx])
 HDR_FILES+=$(wildcard $(CM_DIR)/gen*.[hx])
 HDR_FILES+=$(wildcard $(CM_DIR)/ssi*.[hx])
 HDR_FILES+=$(wildcard $(CM_DIR)/cm*.[hx])
+HDR_FILES+=$(wildcard $(CM_DIR)/common*.[hx])
+HDR_FILES+=$(wildcard $(CM_DIR)/lkw*.[hx])
+HDR_FILES+=$(wildcard $(CM_DIR)/lrg*.[hx])
 
-
-lib: $(LIB_DIR)/libric.a
+lib: $(LIB_DIR)/libE2stub.a
 include $(COM_BUILD_DIR)/compile.mak
 
+L_OPTS=-lsysrepo -lyang
+L_OPTS+= -lm -lpthread
+I_OPTS=-I$(ROOT_DIR)/src/E2/
+I_OPTS=-I$(ROOT_DIR)/src/E2_stub
 I_OPTS+=-I$(ROOT_DIR)/src/mt
 I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/common
+I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/F1AP
+I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/RRC
 I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/E2AP
 I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/E2SM_KPM
-I_OPTS+=-I$(ROOT_DIR)/src/codec_utils/F1AP
-I_OPTS+=-I$(ROOT_DIR)/src/E2
+I_OPTS+=-I$(ROOT_DIR)/src/du_app
 
-ifeq ($(O1_ENABLE),YES)
-I_OPTS+=-I$(ROOT_DIR)/src/o1
-endif
 #-------------------------------------------------------------#
 #Linker macros
 #-------------------------------------------------------------#
-$(LIB_DIR)/libric.a:$(C_OBJS)
+
+$(LIB_DIR)/libE2stub.a:$(C_OBJS)
 		  @echo -e "Creating Archive $(COLOR) $@ $(REVERT_COLOR)"
-		  $(Q)ar -cr $(LIB_DIR)/libric.a $(C_OBJS) 
+		  $(Q)ar -cr $(LIB_DIR)/libE2stub.a $(C_OBJS)
 
 #-------------------------------------------------------------#
 #Clean macros
 #-------------------------------------------------------------#
 clean:
-		  @echo -e "$(COLOR_RED)Cleaning RIC STUB$(REVERT_COLOR)"
-		  @echo $(SRC_DIR) $(CM_DIR)
-		  $(Q)\rm -f $(LIB_DIR)/libric.a $(C_OBJS)
+		  @echo -e "$(COLOR_RED)Cleaning E2_STUB$(REVERT_COLOR)"
+		  $(Q)\rm -f $(LIB_DIR)/libE2stub.a $(C_OBJS) 
 
 #**********************************************************************
 #         End of file
 #**********************************************************************
+

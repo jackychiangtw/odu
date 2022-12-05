@@ -281,38 +281,11 @@ uint8_t fillE2SetupReq(E2setupRequest_t **e2SetupReq, uint8_t *idx)
 
       arrIdx++;
 
-      // KPM function
-
+      /* RAN Functions Added List */
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->id = ProtocolIE_IDE2_id_RANfunction_Item;
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->criticality = CriticalityE2_reject;
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.present = E2setupRequestIEs__value_PR_RANfunctions_List;
-
-      // RANfunction_ItemIEs_t *ranfunc_item;
-      // printf("\nINFO   -->  E2AP : ranfunc_item memory address: %p\n", ranfunc_item);
-      // //ranfunc_item = (RANfunction_ItemIEs_t*)calloc(1, sizeof(RANfunction_ItemIEs_t));
-      // DU_ALLOC(ranfunc_item, sizeof(RANfunction_ItemIEs_t));
-      // printf("\nINFO   -->  E2AP : ranfunc_item memory address: %p\n", ranfunc_item);
-      // printf("\nINFO   -->  E2AP : ranfunc_item memory address: %p\n", ranfunc_item);
-
-      //kpm(ranfunc_item);
-
-      printf("\nINFO   -->  E2AP : ranfun_list1 memory address: %p\n", (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List);
-
-      kpm(&((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List));
-
-      printf("\nINFO   -->  E2AP : ranfun_list2 memory address: %p\n", (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List);
-
-      //xer_fprint(stderr, &asn_DEF_RANfunction_ItemIEs, ranfunc_item);
-
-      //DU_ALLOC((*e2SetupReq)->protocolIEs.list.array, (*e2SetupReq)->protocolIEs.list.size);
-
-      // (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List.count = 1;
-      // (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List.size = 1 * sizeof(RANfunction_ItemIEs_t);
-      // DU_ALLOC((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List.array, sizeof(RANfunction_ItemIEs_t));
-
-      //ASN_SEQUENCE_ADD(&(*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List.list, ranfunc_item);   
-
-
+      kpm(&((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List)); 
       
       arrIdx++;
       /* E2 Node Component Configuration Addition List */
@@ -520,6 +493,9 @@ uint8_t BuildAndSendE2SetupReq()
             printf("%x",encBuf[i]);
          }
       }
+
+      //ASN_STRUCT_RESET(asn_DEF_E2AP_PDU, e2apMsg);
+
       if(SendE2APMsg(DU_APP_MEM_REGION, DU_POOL) != ROK)
       {
          DU_LOG("\nERROR  -->  E2AP : Sending E2 Setup request failed");

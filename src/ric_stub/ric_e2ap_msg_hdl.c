@@ -17,6 +17,7 @@
 *******************************************************************************/
 
 /* This file contains E2AP message handler functions */
+#include "kpm.h"
 #include "common_def.h"
 #include "OCTET_STRING.h"
 #include "BIT_STRING.h"
@@ -417,6 +418,8 @@ RICaction_ToBeSetup_Item_t* fillSetupItems(RICaction_ToBeSetup_Item_t *setupItem
    {
       setupItems->ricActionID = 0;
       setupItems->ricActionType = RICactionType_report;
+      fillActionDefinition(&(setupItems->ricActionType)); // E2SM-KPM
+
    }
 
    return (setupItems);
@@ -478,6 +481,9 @@ uint8_t BuildRicSubsDetails(RICsubscriptionDetails_t *subsDetails)
       uint8_t byteSize = 3;
       subsDetails->ricEventTriggerDefinition.size = byteSize * sizeof(uint8_t);
       RIC_ALLOC(subsDetails->ricEventTriggerDefinition.buf,  subsDetails->ricEventTriggerDefinition.size);
+
+      // Add Event Trigger Defination format 1 of E2SM-KPM
+
       buildPlmnId(ricCfgParams.plmn, subsDetails->ricEventTriggerDefinition.buf);
       elementCnt = 1;
       subsDetails->ricAction_ToBeSetup_List.list.count = elementCnt;
@@ -921,16 +927,21 @@ void E2APMsgHdlr(Buffer *mBuf)
    e2apMsg = &e2apasnmsg;
    memset(e2apMsg, 0, sizeof(E2AP_PDU_t));
 
-   rval = aper_decode(0, &asn_DEF_E2AP_PDU, (void **)&e2apMsg, recvBuf, recvBufLen, 0, 0);
+   //rval = aper_decode(0, &asn_DEF_E2AP_PDU, (void **)&e2apMsg, recvBuf, recvBufLen, 0, 0);
+   rval = aper_decode_complete(NULL, &asn_DEF_E2AP_PDU, (void **)&e2apMsg, recvBuf, recvBufLen);
+
+   
    RIC_FREE(recvBuf, (Size)recvBufLen);
+
+   DU_LOG("\n");
+   xer_fprint(stdout, &asn_DEF_E2AP_PDU, e2apMsg);
 
    if(rval.code == RC_FAIL || rval.code == RC_WMORE)
    {
-      DU_LOG("\nERROR  -->  E2AP : ASN decode failed");
+      DU_LOG("\nERROR  -->  E2AP : ASN decode failed %d", rval.code);
       return;
    }
-   DU_LOG("\n");
-   xer_fprint(stdout, &asn_DEF_E2AP_PDU, e2apMsg);
+   
 
    switch(e2apMsg->present)
    {

@@ -223,7 +223,7 @@ uint8_t fillE2SetupReq(E2setupRequest_t **e2SetupReq, uint8_t *idx)
 
    if(*e2SetupReq != NULLP)
    {
-      elementCnt = 4; // Add RAN functions
+      elementCnt = 3; // Add RAN functions
       (*e2SetupReq)->protocolIEs.list.count = elementCnt;
       (*e2SetupReq)->protocolIEs.list.size = elementCnt * sizeof(E2setupRequestIEs_t*);
 
@@ -260,8 +260,7 @@ uint8_t fillE2SetupReq(E2setupRequest_t **e2SetupReq, uint8_t *idx)
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.present = E2setupRequestIEs__value_PR_GlobalE2node_ID;
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.GlobalE2node_ID.present = GlobalE2node_ID_PR_gNB;
 
-      DU_ALLOC((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.\
-            GlobalE2node_ID.choice.gNB, sizeof(GlobalE2node_gNB_ID_t));
+      DU_ALLOC((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.GlobalE2node_ID.choice.gNB, sizeof(GlobalE2node_gNB_ID_t));
       if((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.\
             GlobalE2node_ID.choice.gNB == NULLP)
       {
@@ -282,27 +281,16 @@ uint8_t fillE2SetupReq(E2setupRequest_t **e2SetupReq, uint8_t *idx)
       arrIdx++;
 
       /* RAN Functions Added List */
-      (*e2SetupReq)->protocolIEs.list.array[arrIdx]->id = ProtocolIE_IDE2_id_RANfunction_Item;
+      (*e2SetupReq)->protocolIEs.list.array[arrIdx]->id = ProtocolIE_IDE2_id_RANfunctionsAdded;
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->criticality = CriticalityE2_reject;
       (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.present = E2setupRequestIEs__value_PR_RANfunctions_List;
+
       kpm(&((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.RANfunctions_List)); 
       
       arrIdx++;
       /* E2 Node Component Configuration Addition List */
-      (*e2SetupReq)->protocolIEs.list.array[arrIdx]->id = ProtocolIE_IDE2_id_E2nodeComponentConfigAddition;
-      (*e2SetupReq)->protocolIEs.list.array[arrIdx]->criticality = CriticalityE2_reject;
-      (*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.present = E2setupRequestIEs__value_PR_E2nodeComponentConfigAddition_List;
-      if(BuildE2NodeConfigAddList(&((*e2SetupReq)->protocolIEs.list.array[arrIdx]->value.choice.E2nodeComponentConfigAddition_List))!=ROK)
-      {
-         DU_LOG("\nERROR  -->  E2AP : Failed to E2 Node config addition list");
-         return RFAILED;
-      }
+      
 
-   }
-   else
-   {
-      DU_LOG("\nERROR  -->  E2AP : received e2SetupReq is NULL");
-      return RFAILED;
    }
    return ROK;
 }

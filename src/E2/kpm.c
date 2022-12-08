@@ -57,7 +57,6 @@ uint8_t fillRanFunctionName(RANfunction_Name_t *ranfunc_name){
 
 uint8_t fillTriggerStyle(RIC_EventTriggerStyle_Item_t **trigger_style){
     *trigger_style = (RIC_EventTriggerStyle_Item_t*)calloc(1, sizeof(RIC_EventTriggerStyle_Item_t));
-
     (*trigger_style)->ric_EventTriggerStyle_Type = 1; // KPM only supports type 1
 
     uint8_t trig_name[] = "Periodic report";
@@ -86,24 +85,17 @@ uint8_t kpm(RANfunctions_List_t  *ranfun_list)
 
     printf("\nINFO   -->  E2 Agent : List all RAN functions<<<<\n");
     //sleep(1000);
-
-
     ASN_STRUCT_RESET(asn_DEF_E2SM_KPM_RANfunction_Description, ranfunc_desc);
 
     // RAN Function Name Start
     fillRanFunctionName(&ranfunc_desc->ranFunction_Name);
 
     //RAN Function Name End
-
-
     //Sequence of Event Trigger styles Start
     RIC_EventTriggerStyle_Item_t *trigger_style;
     fillTriggerStyle(&trigger_style);
         
-    printf("Address: %ld\n", trigger_style);
-
-
-    ranfunc_desc->ric_ReportStyle_List = (struct E2SM_KPM_RANfunction_Description__ric_EventTriggerStyle_List*)calloc(1, sizeof(struct E2SM_KPM_RANfunction_Description__ric_EventTriggerStyle_List));
+    ranfunc_desc->ric_EventTriggerStyle_List = (struct E2SM_KPM_RANfunction_Description__ric_EventTriggerStyle_List*)calloc(1, sizeof(struct E2SM_KPM_RANfunction_Description__ric_EventTriggerStyle_List));
     ASN_SEQUENCE_ADD(&ranfunc_desc->ric_EventTriggerStyle_List->list, trigger_style);
     // Sequence of Event Trigger styles End
 
@@ -114,7 +106,6 @@ uint8_t kpm(RANfunctions_List_t  *ranfun_list)
     RIC_ReportStyle_Item_t *report_style = (RIC_ReportStyle_Item_t*)calloc(1, sizeof(RIC_ReportStyle_Item_t));
 
     report_style->ric_ReportStyle_Type = 1;
-
     uint8_t report_name[] = "O-DU Measurement Container for the 5GC connected deployment";
 
     report_style->ric_ReportStyle_Name.size = sizeof(report_name);
@@ -122,7 +113,6 @@ uint8_t kpm(RANfunctions_List_t  *ranfun_list)
     memcpy(report_style->ric_ReportStyle_Name.buf, report_name, report_style->ric_ReportStyle_Name.size);
     report_style->ric_IndicationHeaderFormat_Type = 1;
     report_style->ric_IndicationMessageFormat_Type = 1;
-
     report_style->ric_ActionFormat_Type = 1; // new in KPM 2.0
 
     MeasurementInfo_Action_Item_t *measure_item;
@@ -133,9 +123,7 @@ uint8_t kpm(RANfunctions_List_t  *ranfun_list)
     measure_item->measName.buf = (uint8_t*)calloc(sizeof(measure_name), sizeof(uint8_t));
     memcpy(measure_item->measName.buf, measure_name, measure_item->measName.size);
 
-
     ASN_SEQUENCE_ADD(&report_style->measInfo_Action_List.list, measure_item);
-
     ASN_SEQUENCE_ADD(&ranfunc_desc->ric_ReportStyle_List->list, report_style);
 
     // Sequence of Report style End
@@ -155,49 +143,39 @@ uint8_t kpm(RANfunctions_List_t  *ranfun_list)
     memcpy(ranfunc_item->value.choice.RANfunction_Item.ranFunctionOID.buf, ranfunc_oid, ranfunc_item->value.choice.RANfunction_Item.ranFunctionOID.size);
 
     // encode the E2SM-KPM message into the E2AP buffer (OCTET_STRING_t in E2AP)
+
     uint8_t e2smbuffer[8192];
     size_t e2smbuffer_size = 8192;
     asn_enc_rval_t     encRetVal;
     asn_dec_rval_t     decRetVal; 
 
     encBufSize = 0;
+    //encRetVal = aper_encode_to_buffer(&asn_DEF_E2SM_KPM_RANfunction_Description, NULL, ranfunc_desc, e2smbuffer, e2smbuffer_size);
 
-    encRetVal = aper_encode_to_buffer(&asn_DEF_E2SM_KPM_RANfunction_Description, NULL, ranfunc_desc, e2smbuffer, e2smbuffer_size);
-
+    encRetVal = asn_encode_to_buffer(opt_cod,
+         ATS_ALIGNED_BASIC_PER,
+         &asn_DEF_E2SM_KPM_RANfunction_Description,
+         ranfunc_desc, e2smbuffer, e2smbuffer_size);
+    
+    //encRetVal = aper_encode(&asn_DEF_E2SM_KPM_RANfunction_Description, 0, ranfunc_desc, PrepFinalEncBuf, e2smbuffer);
 
     printf("\nINFO   -->  E2 Agent : Print out encode size: %d\n", encRetVal.encoded);
-
 
     OCTET_STRING_t *ranfunc_ostr = (OCTET_STRING_t*)calloc(1,sizeof(OCTET_STRING_t));
     ranfunc_ostr->buf = (uint8_t*)calloc(encRetVal.encoded, sizeof(uint8_t));
     ranfunc_ostr->size = encRetVal.encoded;
-    memcpy(ranfunc_ostr->buf,e2smbuffer,encRetVal.encoded);
+    memcpy(ranfunc_ostr->buf, e2smbuffer, encRetVal.encoded);
 
     ranfunc_item->value.choice.RANfunction_Item.ranFunctionDefinition.size = (uint8_t*)ranfunc_ostr->size;
     ranfunc_item->value.choice.RANfunction_Item.ranFunctionDefinition.buf = (uint8_t*)calloc(ranfunc_ostr->size, sizeof(uint8_t));
     memcpy(ranfunc_item->value.choice.RANfunction_Item.ranFunctionDefinition.buf, ranfunc_ostr->buf, ranfunc_item->value.choice.RANfunction_Item.ranFunctionDefinition.size);
     ranfunc_item->value.choice.RANfunction_Item.ranFunctionRevision = 1;  
 
-
-    
     xer_fprint(stderr, &asn_DEF_RANfunction_ItemIEs, ranfunc_item);
 
     // Fill in list of RAN funcion
-
-    //ASN_SEQUENCE_ADD(&ranfun_list->list, ranfunc_item);
-
-
-    printf("\nINFO   -->  E2 Agent : Decode the message\n");
-    ASN_STRUCT_RESET(asn_DEF_E2SM_KPM_RANfunction_Description, ranfunc_desc);
-
-    decRetVal = aper_decode_complete(NULL, &asn_DEF_E2SM_KPM_RANfunction_Description, &ranfunc_desc, ranfunc_ostr->buf, ranfunc_ostr->size);
-
-    printf("\nINFO   -->  E2 Agent : Print out encode result: %d\n", decRetVal.code);
-
-
+    ASN_SEQUENCE_ADD(&ranfun_list->list, ranfunc_item);
     
-    xer_fprint(stderr, &asn_DEF_E2SM_KPM_RANfunction_Description, ranfunc_desc); // print E2SM-KPM message again
-
     return ret;
 }
 

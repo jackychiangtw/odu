@@ -32,6 +32,8 @@
 #include "E2AP-PDU.h"
 #include "du_log.h"
 #include "E2nodeComponentInterfaceF1.h"
+#include "E2SM-KPM-EventTriggerDefinition.h"
+
 
 
 /*******************************************************************
@@ -416,10 +418,20 @@ RICaction_ToBeSetup_Item_t* fillSetupItems(RICaction_ToBeSetup_Item_t *setupItem
 {
    if(setupItems != NULLP)
    {
-      setupItems->ricActionID = 0;
+      setupItems->ricActionID = 17;
       setupItems->ricActionType = RICactionType_report;
-      fillActionDefinition(&(setupItems->ricActionType)); // E2SM-KPM
+      RICactionDefinition_t *ricdifin;
 
+      // setupItems->ricActionDefinition = (RICactionDefinition_t*)malloc(sizeof(RICactionDefinition_t));
+
+      // fillActionDefinition(&ricdifin); // E2SM-KPM
+
+      // setupItems->ricActionDefinition->size = ricdifin->size;
+      // setupItems->ricActionDefinition->buf = (uint8_t*)malloc(ricdifin->size);
+      // memcpy(setupItems->ricActionDefinition->buf, ricdifin->buf, ricdifin->size);
+
+      fillActionDefinition(&(setupItems->ricActionDefinition));
+      printf("\nINFO   -->  fillActionDefinition end<<<<\n");
    }
 
    return (setupItems);
@@ -478,13 +490,17 @@ uint8_t BuildRicSubsDetails(RICsubscriptionDetails_t *subsDetails)
    {
       /* Octet string to be build here */
       /* Sending PLMN as Octect string */
-      uint8_t byteSize = 3;
+      /*uint8_t byteSize = 3;
       subsDetails->ricEventTriggerDefinition.size = byteSize * sizeof(uint8_t);
       RIC_ALLOC(subsDetails->ricEventTriggerDefinition.buf,  subsDetails->ricEventTriggerDefinition.size);
-
+      buildPlmnId(ricCfgParams.plmn, subsDetails->ricEventTriggerDefinition.buf);
+      */
+       RICeventTriggerDefinition_t *eventTrigDefi = (RICeventTriggerDefinition_t*)calloc(1,sizeof(RICeventTriggerDefinition_t));
+      
+      fillEventTrigDefinitionFormat1(&eventTrigDefi);
+      subsDetails->ricEventTriggerDefinition = *eventTrigDefi;
       // Add Event Trigger Defination format 1 of E2SM-KPM
 
-      buildPlmnId(ricCfgParams.plmn, subsDetails->ricEventTriggerDefinition.buf);
       elementCnt = 1;
       subsDetails->ricAction_ToBeSetup_List.list.count = elementCnt;
       subsDetails->ricAction_ToBeSetup_List.list.size = \
@@ -927,21 +943,16 @@ void E2APMsgHdlr(Buffer *mBuf)
    e2apMsg = &e2apasnmsg;
    memset(e2apMsg, 0, sizeof(E2AP_PDU_t));
 
-   //rval = aper_decode(0, &asn_DEF_E2AP_PDU, (void **)&e2apMsg, recvBuf, recvBufLen, 0, 0);
-   rval = aper_decode_complete(NULL, &asn_DEF_E2AP_PDU, (void **)&e2apMsg, recvBuf, recvBufLen);
-
-   
+   rval = aper_decode(0, &asn_DEF_E2AP_PDU, (void **)&e2apMsg, recvBuf, recvBufLen, 0, 0);
    RIC_FREE(recvBuf, (Size)recvBufLen);
-
-   DU_LOG("\n");
-   xer_fprint(stdout, &asn_DEF_E2AP_PDU, e2apMsg);
 
    if(rval.code == RC_FAIL || rval.code == RC_WMORE)
    {
-      DU_LOG("\nERROR  -->  E2AP : ASN decode failed %d", rval.code);
+      DU_LOG("\nERROR  -->  E2AP : ASN decode failed");
       return;
    }
-   
+   DU_LOG("\n");
+   xer_fprint(stdout, &asn_DEF_E2AP_PDU, e2apMsg);
 
    switch(e2apMsg->present)
    {

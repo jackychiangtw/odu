@@ -1048,8 +1048,8 @@ uint8_t procRicSubsReq(E2AP_PDU_t *e2apMsg)
 	       }
 	    case ProtocolIE_IDE2_id_RICsubscriptionDetails:
 	       {
-		  recvBufLen = sizeof(ricSubsReq->protocolIEs.list.array[idx]->value\
-			.choice.RICsubscriptionDetails.ricEventTriggerDefinition.size);
+		  recvBufLen = ricSubsReq->protocolIEs.list.array[idx]->value\
+			.choice.RICsubscriptionDetails.ricEventTriggerDefinition.size;
 		  e2apMsgDb.ricEventTrigger = NULLP;
 		  DU_ALLOC(e2apMsgDb.ricEventTrigger, recvBufLen);
 		  /*TODO : e2apMsgDb.ricEventTrigger memory to be deallocated after the usage */
@@ -1058,13 +1058,26 @@ uint8_t procRicSubsReq(E2AP_PDU_t *e2apMsg)
 		     memcpy(e2apMsgDb.ricEventTrigger, ricSubsReq->protocolIEs.list.array[idx]\
 			   ->value.choice.RICsubscriptionDetails.ricEventTriggerDefinition.buf, \
 			   recvBufLen);
+
+            decapEventTrigDefinitionFormat1(&ricSubsReq->protocolIEs.list.array[idx]\
+			   ->value.choice.RICsubscriptionDetails.ricEventTriggerDefinition);
+            
+            // RICeventTriggerDefinition_t *defini = (RICeventTriggerDefinition_t*)calloc(1, sizeof(RICeventTriggerDefinition_t));
+            // defini->size = recvBufLen;
+            // defini->buf = (uint8_t)calloc(1, recvBufLen);
+            // memcpy(&defini->buf, ricSubsReq->protocolIEs.list.array[idx]\
+			   // ->value.choice.RICsubscriptionDetails.ricEventTriggerDefinition.buf, recvBufLen);
+
+            // xer_fprint(stderr, &asn_DEF_RICeventTriggerDefinition, defini);
+            
+           
 		     free(ricSubsReq->protocolIEs.list.array[idx]->value.choice.\
 			   RICsubscriptionDetails.ricEventTriggerDefinition.buf);
 		  }
 		  if(ricSubsReq->protocolIEs.list.array[idx]->value.choice.RICsubscriptionDetails.ricAction_ToBeSetup_List.\
 			list.array)
 		  {
-		     actionItem =(RICaction_ToBeSetup_ItemIEs_t *)ricSubsReq->protocolIEs.list\
+		     actionItem = (RICaction_ToBeSetup_ItemIEs_t *)ricSubsReq->protocolIEs.list\
 				 .array[idx]->value.choice.RICsubscriptionDetails.ricAction_ToBeSetup_List\
 				 .list.array[0];
 
@@ -1077,6 +1090,8 @@ uint8_t procRicSubsReq(E2AP_PDU_t *e2apMsg)
 			      {
 				 e2apMsgDb.ricActionId = actionItem->value.choice.RICaction_ToBeSetup_Item.ricActionID;
 				 e2apMsgDb.ricActionType = actionItem->value.choice.RICaction_ToBeSetup_Item.ricActionType;
+             decapActionDefinition(actionItem->value.choice.RICaction_ToBeSetup_Item.ricActionDefinition);
+             
 				 break;
 			      }
 			   default:
@@ -1695,6 +1710,7 @@ void E2APMsgHdlr(Buffer *mBuf)
                   {
                      if(procRicSubsReq(e2apMsg) == ROK)
                      {
+
                         BuildAndSendRicIndication();
                      }
                      break;

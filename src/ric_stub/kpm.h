@@ -25,7 +25,8 @@ extern asn_TYPE_descriptor_t asn_DEF_E2SM_KPM_RANfunction_Description;
 //void callback_kpm_subscription_request(E2AP_PDU_t *pdu);
 //void register_e2sm(long func_id, OCTET_STRING_t* ostr);
 uint8_t kpm(RANfunctions_List_t  *ranfun_list);
-uint8_t fillActionDefinition(RICactionDefinition_t *ricdifin);
+uint8_t fillActionDefinition(RICactionDefinition_t **ricdifin);
+uint8_t fillEventTrigDefinitionFormat1(RICeventTriggerDefinition_t **eventTrigDefi);
 
 struct ran_func_info {
     long ranFunctionId;

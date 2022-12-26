@@ -17,7 +17,10 @@
 #include "E2SM-KPM-IndicationMessage.h"
 #include "E2SM-KPM-RANfunction-Description.h"
 #include "E2SM-KPM-IndicationHeader-Format1.h"
+#include "E2SM-KPM-EventTriggerDefinition.h"
+#include "E2SM-KPM-EventTriggerDefinition-Format1.h"
 #include "E2SM-KPM-IndicationHeader.h"
+#include "E2SM-KPM-ActionDefinition.h"
 #include "E2AP-PDU.h"
 #include "RICsubscriptionRequest.h"
 #include "RICsubscriptionResponse.h"
@@ -66,7 +69,6 @@ uint8_t fillTriggerStyle(RIC_EventTriggerStyle_Item_t **trigger_style){
 
     (*trigger_style)->ric_EventTriggerFormat_Type = 5;
 
-    printf("Address: %ld\n", *trigger_style);
 }
 
 
@@ -179,28 +181,44 @@ uint8_t kpm(RANfunctions_List_t  *ranfun_list)
     return ret;
 }
 
+uint8_t fillMeasInfoItem(MeasurementInfoItem_t **measInfoItem){
+    *measInfoItem = (MeasurementInfoItem_t*)malloc(sizeof(MeasurementInfoItem_t));
+    LabelInfoItem_t *measLabelInfo = (LabelInfoItem_t*)calloc(1, sizeof(LabelInfoItem_t)); // can't use malloc
+    long *measLabelInfo_sum = (long*)malloc(sizeof(long));
 
-uint8_t fillActionDefinition(RICactionDefinition_t *ricdifin){ // 
+    (*measInfoItem)->measType.present = MeasurementType_PR_measID; // Choose name or ID
+    (*measInfoItem)->measType.choice.measID = 101; // defined by user
+    *measLabelInfo_sum = MeasurementLabel__sUM_true;
+    measLabelInfo->measLabel.sUM = measLabelInfo_sum;
+
+    ASN_SEQUENCE_ADD(&(*measInfoItem)->labelInfoList.list, measLabelInfo);
+
+}
+
+
+uint8_t fillActionDefinition(RICactionDefinition_t **ricdifin){ // 
     asn_enc_rval_t     encRetVal;
     asn_codec_ctx_t *opt_cod;
     E2SM_KPM_ActionDefinition_Format1_t *actionDefinFormat = (E2SM_KPM_ActionDefinition_Format1_t*)calloc(1, sizeof(E2SM_KPM_ActionDefinition_Format1_t));
-    MeasurementInfoItem_t *measInfoItem = (MeasurementInfoItem_t*)calloc(1, sizeof(MeasurementInfoItem_t));
-    LabelInfoItem_t *measLabelInfo = (LabelInfoItem_t*)calloc(1, sizeof(LabelInfoItem_t));
-    long *measLabelInfo_sum = (long*)calloc(1, sizeof(long));
+    *ricdifin = (RICactionDefinition_t*)malloc(sizeof(RICactionDefinition_t));
 
+    printf("\nINFO   -->  E2 Agent : Print Action Definition<<<<\n");
     actionDefinFormat->granulPeriod = 100; // 100ms
 
-    measInfoItem->measType.present = MeasurementType_PR_measID; // Choose name or ID
-    measInfoItem->measType.choice.measID = 101; // defined by user
-    *measLabelInfo_sum = MeasurementLabel__avg_true;
-    measLabelInfo->measLabel.sUM = measLabelInfo_sum;
+    MeasurementInfoItem_t *measInfoItem;
+    fillMeasInfoItem(&measInfoItem);
+
+    ASN_SEQUENCE_ADD(&actionDefinFormat->measInfoList.list, measInfoItem);
 
     uint8_t e2smbuffer[8192] = {0, };
     size_t e2smbuffer_size = 8192;
+
+    // Encode to OCTET STRING
+
     asn_enc_rval_t er =
     asn_encode_to_buffer(opt_cod,
          ATS_ALIGNED_BASIC_PER,
-         &asn_DEF_RICactionDefinition,
+         &asn_DEF_E2SM_KPM_ActionDefinition_Format1,
          actionDefinFormat, e2smbuffer, e2smbuffer_size);
 
     OCTET_STRING_t *ricdifin_ostr = (OCTET_STRING_t*)calloc(1,sizeof(OCTET_STRING_t));
@@ -208,10 +226,86 @@ uint8_t fillActionDefinition(RICactionDefinition_t *ricdifin){ //
     ricdifin_ostr->size = er.encoded;
     memcpy(ricdifin_ostr->buf,e2smbuffer,er.encoded);
 
-    ricdifin->size = ricdifin_ostr->size;
-    ricdifin->buf = ricdifin_ostr->buf;
+    (*ricdifin)->size = ricdifin_ostr->size;
+    (*ricdifin)->buf = (uint8_t*)malloc(ricdifin_ostr->size);
+    memcpy((*ricdifin)->buf, ricdifin_ostr->buf, (*ricdifin)->size);
+
+    xer_fprint(stderr, &asn_DEF_E2SM_KPM_ActionDefinition_Format1, actionDefinFormat);
+
+
+    printf("\nINFO   -->  E2 Agent : Print Action Definition End<<<<\n");
+
+}
+
+uint8_t fillEventTrigDefinitionFormat1(RICeventTriggerDefinition_t **eventTrigDefi){
+
+    E2SM_KPM_EventTriggerDefinition_t *kpmEventTrig = (E2SM_KPM_EventTriggerDefinition_t*)calloc(1, sizeof(E2SM_KPM_EventTriggerDefinition_t));
+    E2SM_KPM_EventTriggerDefinition_Format1_t *kpmEventTrigFormat1 = (E2SM_KPM_EventTriggerDefinition_Format1_t*)calloc(1, sizeof(E2SM_KPM_EventTriggerDefinition_Format1_t));
+
+    printf("\nINFO   -->  E2 Agent : Fill Event Trigger Definition<<<<\n");
+
+    kpmEventTrig->eventDefinition_formats.present = E2SM_KPM_EventTriggerDefinition__eventDefinition_formats_PR_eventDefinition_Format1;
+    kpmEventTrig->eventDefinition_formats.choice.eventDefinition_Format1 = kpmEventTrigFormat1;
+    kpmEventTrigFormat1->reportingPeriod = 1000; // 1000ms
+
+    uint8_t e2smbuffer[8192] = {0, };
+    size_t e2smbuffer_size = 8192;
+    asn_codec_ctx_t *opt_cod;
+
+    asn_enc_rval_t er =
+    asn_encode_to_buffer(opt_cod,
+         ATS_ALIGNED_BASIC_PER,
+         &asn_DEF_E2SM_KPM_EventTriggerDefinition,
+         kpmEventTrig, e2smbuffer, e2smbuffer_size);
+
+    //*eventTrigDefi = (RICeventTriggerDefinition_t*)calloc(1, sizeof(RICeventTriggerDefinition_t));
+
+    (*eventTrigDefi)->buf = (uint8_t*)calloc(1,er.encoded);
+    (*eventTrigDefi)->size = er.encoded;
+    memcpy((*eventTrigDefi)->buf,e2smbuffer,er.encoded);
+
+    xer_fprint(stderr, &asn_DEF_E2SM_KPM_EventTriggerDefinition, kpmEventTrig);
+    printf("\nINFO   -->  E2 Agent : Event Trigger Definition End<<<<\n");
 
 }
 
 
+uint8_t decapEventTrigDefinitionFormat1(RICeventTriggerDefinition_t *defini){
+    asn_dec_rval_t  rval;
+    E2SM_KPM_EventTriggerDefinition_t *kpmEventTrig = (E2SM_KPM_EventTriggerDefinition_t*)calloc(1, sizeof(E2SM_KPM_EventTriggerDefinition_t));
 
+    printf("\nINFO   -->  E2 Agent : Decap Event Trigger Definition<<<<\n");
+
+    rval = aper_decode(0, &asn_DEF_E2SM_KPM_EventTriggerDefinition, (void **)&kpmEventTrig, defini->buf, defini->size, 0, 0);
+    if(rval.code == RC_FAIL || rval.code == RC_WMORE)
+   {
+      printf("\nERROR  -->  E2 Agent : ASN decode failed");
+   }
+    
+    xer_fprint(stdout, &asn_DEF_E2SM_KPM_EventTriggerDefinition, kpmEventTrig);
+    printf("\nINFO  -->  E2 Agent : Report Period is %d\n", kpmEventTrig->eventDefinition_formats.choice.eventDefinition_Format1->reportingPeriod);
+
+
+}
+
+uint8_t decapActionDefinition(RICactionDefinition_t *ricdifin){
+    asn_dec_rval_t  rval;
+    E2SM_KPM_ActionDefinition_Format1_t *actionDefinFormat = (E2SM_KPM_ActionDefinition_Format1_t*)calloc(1, sizeof(E2SM_KPM_ActionDefinition_Format1_t));
+
+    printf("\nINFO   -->  E2 Agent : Decap Action Definition<<<<\n");
+
+    //xer_fprint(stdout, &asn_DEF_RICactionDefinition, ricdifin);
+
+    rval = aper_decode(0, &asn_DEF_E2SM_KPM_ActionDefinition_Format1, (void **)&actionDefinFormat, ricdifin->buf, ricdifin->size, 0, 0);
+    if(rval.code == RC_FAIL || rval.code == RC_WMORE)
+   {
+      printf("\nERROR  -->  E2 Agent : ASN decode failed\n");
+   }
+    
+    xer_fprint(stdout, &asn_DEF_E2SM_KPM_ActionDefinition_Format1, actionDefinFormat);
+
+    printf("\nINFO  -->  E2 Agent : Measurement ID is %d", actionDefinFormat->measInfoList.list.array[0]->measType.choice.measID);
+    //printf("\nERROR  -->  E2 Agent : Measurement Label Sum is %d\n", *(actionDefinFormat->measInfoList.list.array[0]->labelInfoList.list.array[0]->measLabel.sUM));
+    printf("\nINFO  -->  E2 Agent : Granularity Period is %d\n", actionDefinFormat->granulPeriod);
+
+}
